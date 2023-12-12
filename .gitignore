@@ -21,3 +21,6 @@ __pycache__/
 
 # Other settings
 .DS_Store
+
+*.txt
+*.csv
