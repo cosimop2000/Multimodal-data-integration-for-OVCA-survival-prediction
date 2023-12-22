@@ -25,3 +25,4 @@ __pycache__/
 *.txt
 *.csv
 *.json
+Data/config.ini

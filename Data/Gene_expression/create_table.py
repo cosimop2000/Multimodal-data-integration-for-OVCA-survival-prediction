@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 import json
-
+import configparser
 
 class JsonTxtDataProcessor:
     def __init__(self, json_file_path, txt_directory_path, num_files=None, uq=None):
@@ -81,8 +81,10 @@ class JsonTxtDataProcessor:
 
 
 # Example usage:
-json_file_path = 'gene_expression.json'  # Replace with actual json file
-txt_directory_path = 'path/to/your/mRNA_data\\mRNA_data'  # Replace with the actual directory path
+parser = configparser.ConfigParser()
+parser.read('Data/config.ini')
+json_file_path = parser['expression']['json_file_path']
+txt_directory_path = parser['expression']['data_path']
 num_files_to_process = None  # Set to None to process all files
 
 # https://docs.gdc.cancer.gov/Data/Bioinformatics_Pipelines/Expression_mRNA_Pipeline/#fpkm

@@ -1,6 +1,8 @@
 import os
 import pandas as pd
 import json
+import configparser
+
 
 
 class JsonTxtDataProcessor:
@@ -64,15 +66,16 @@ class JsonTxtDataProcessor:
         return self.df
 
 
-# Example usage:
-json_file_path = 'methylation.json' # Replace with actual json file
-txt_directory_path = 'path/to/your/methylation_data\\methylation_data'  # Replace with the actual directory path
+# Example usage:    
+parser = configparser.ConfigParser()
+parser.read('Data/config.ini')
+json_file_path = parser['methylation']['json_file_path']
+txt_directory_path = parser['methylation']['data_path']
 num_files_to_process = None  # Set to None to process all files
 
 data_processor = JsonTxtDataProcessor(json_file_path, txt_directory_path, num_files=num_files_to_process)
 result_df = data_processor.process_data()
 print(result_df)
-# print(result_df['55153632-1673-487a-85c0-f156377db1fc'])
 
 # Save result_df as CSV file
 result_df.to_csv('result.csv', index=True)
