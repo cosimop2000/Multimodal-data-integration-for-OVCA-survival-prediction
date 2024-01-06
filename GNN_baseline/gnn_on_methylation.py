@@ -26,8 +26,9 @@ class GCN(torch.nn.Module):
 def test(model, data):
       model.eval()
       out = model(data.x, data.edge_index)
-      pred = torch.tensor(np.where(out>0.5, 1, 0))  # Use the class with highest probability.
-      test_correct = pred[data.test_mask] == data.y[data.test_mask].unsqueeze(-1)  # Check against ground-truth labels.
+      out = torch.softmax(out, dim=1)
+      pred = torch.argmax(out, dim=1) # Use the class with highest probability.
+      test_correct = pred[data.test_mask] == data.y[data.test_mask].reshape(-1) # Check against ground-truth labels.
       test_acc = int(test_correct.sum()) / int(data.test_mask.sum())  # Derive ratio of correct predictions.
       return test_acc
 
