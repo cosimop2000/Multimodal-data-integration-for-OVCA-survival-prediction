@@ -50,7 +50,7 @@ def load_dataset(df, labels):
     #scale Y between 0 and 1
     Y = (Y-np.min(Y))/(np.max(Y)-np.min(Y))
     #discretize Y in 3 classes:
-    Y = np.where(Y<0.2, 0, 1)
+    Y = np.where(Y<0.2, 0, Y)
     Y = np.where(Y>0.5, 2, Y)
     Y = np.where((Y>=0.2) & (Y<=0.5), 1, Y)
     #print the percatage of each class
@@ -64,7 +64,7 @@ def load_dataset(df, labels):
     #normalize X to 0 mean and 1 variance
     X = sklearn.preprocessing.scale(X)
     X = torch.from_numpy(X)
-    Y = torch.from_numpy(Y)
+    Y = torch.from_numpy(Y).long()
     return X, Y
 
 
@@ -94,7 +94,7 @@ if __name__ == '__main__':
     
     #train
     model.train()
-    for epoch in range(200):
+    for epoch in range(150):
         optimizer.zero_grad()  # Clear gradients.
         out = model(data.x, data.edge_index)  # Perform a single forward pass.
         loss = criterion(out[data.train_mask],data.y[data.train_mask].reshape(-1))  # Compute the loss solely based on the training nodes.
