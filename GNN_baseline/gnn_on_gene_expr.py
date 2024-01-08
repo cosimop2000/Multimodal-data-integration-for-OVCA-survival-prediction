@@ -7,21 +7,14 @@ from sklearn.impute import SimpleImputer
 import torch_geometric
 from torch.nn import functional as F
 from torch_geometric.nn import GCNConv
+from torch_geometric.nn.aggr import SoftmaxAggregation
 from torch_geometric.utils import to_networkx
+
 
 NUM_FEATURE = 150
 
 import networkx as nx
 import matplotlib.pyplot as plt
-
-
-def visualize_graph(G, color):
-    plt.figure(figsize=(7,7))
-    plt.xticks([])
-    plt.yticks([])
-    nx.draw_networkx(G, pos=nx.spring_layout(G, seed=42), with_labels=False,
-                     node_color=color, cmap="Set2")
-    plt.show()
 
 
 #Define the GCN model
@@ -32,18 +25,24 @@ class GCN(torch.nn.Module):
         self.conv1 = GCNConv(num_features, hidden_channels)
         self.conv2 = GCNConv(hidden_channels, 50)
         self.conv3 = GCNConv(50, num_classes)
+        self.conv4 = GCNConv(50, num_classes)
         
 
     def forward(self, x, edge_index):
         x = self.conv1(x, edge_index)
-        x = x.relu()
-        x = F.dropout(x, p=0.5, training=self.training)
-        x = self.conv2(x, edge_index)
-        x = x.relu()
-        x = F.dropout(x, p=0.5, training=self.training)
-        x = self.conv3(x, edge_index)
         
-        return x
+        residual = x
+
+        x = x.relu()
+        x = F.dropout(x, p=0.5, training=self.training)
+        
+        x+= residual
+        
+        y = self.conv2(x, edge_index)
+        y = y.relu()
+        y = self.conv3(y, edge_index)
+        
+        return y
 
 def test(model, data):
       model.eval()
@@ -119,7 +118,8 @@ if __name__ == '__main__':
     
     #train
     model.train()
-    for epoch in range(150):
+    
+    for epoch in range(200):
         optimizer.zero_grad()  # Clear gradients.
         out = model(data.x, data.edge_index)  # Perform a single forward pass.
         loss = criterion(out[data.train_mask],data.y[data.train_mask].reshape(-1))  # Compute the loss solely based on the training nodes.
@@ -132,5 +132,3 @@ if __name__ == '__main__':
     test_acc = test(model, data)
     print(f'Test Accuracy: {test_acc:.4f}')
     
-    G = to_networkx(data, to_undirected=True)
-    visualize_graph(G, color=y)
