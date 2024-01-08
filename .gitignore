@@ -27,3 +27,4 @@ __pycache__/
 *.json
 *.tsv
 Data/config.ini
+model.pt
