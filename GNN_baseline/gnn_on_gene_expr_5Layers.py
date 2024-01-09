@@ -7,21 +7,29 @@ from sklearn.impute import SimpleImputer
 import torch_geometric
 from torch.nn import functional as F
 from torch_geometric.nn import GCNConv
+from torch_geometric.nn.aggr import SoftmaxAggregation
+from torch_geometric.utils import to_networkx
+
+
+NUM_FEATURE = 150
+
+import networkx as nx
+import matplotlib.pyplot as plt
+
 
 #Define the GCN model
 class GCN(torch.nn.Module):
-    def __init__(self, num_features, hidden_channels, hidden_channels2, num_classes):
+    def __init__(self, num_features, hidden_channels, num_classes):
         super().__init__()
-        h1 = 7000
-        h2 = 1750
-        h3 = 450
-        h4 = 100
+        h1 = 3200
+        h2 = 500
+        h3 = 100
         torch.manual_seed(1234567)
         self.conv1 = GCNConv(num_features, h1)
         self.conv2 = GCNConv(h1, h2)
         self.conv3 = GCNConv(h2, h3)
-        self.conv4 = GCNConv(h3, h4)
-        self.conv5 = GCNConv(h4, num_classes)
+        self.conv4 = GCNConv(h3, num_classes)
+        
 
     def forward(self, x, edge_index):
         x = self.conv1(x, edge_index)
@@ -34,19 +42,18 @@ class GCN(torch.nn.Module):
         x = x.relu()
         x = F.dropout(x, p=0.3, training=self.training)
         x = self.conv4(x, edge_index)
-        x = x.relu()
-        x = F.dropout(x, p=0.3, training=self.training)
-        x = self.conv5(x, edge_index)
         return x
-
+    
 def test(model, data):
-      model.eval()
-      out = model(data.x, data.edge_index)
-      out = torch.softmax(out, dim=1)
-      pred = torch.argmax(out, dim=1) # Use the class with highest probability.
-      test_correct = pred[data.test_mask] == data.y[data.test_mask].reshape(-1) # Check against ground-truth labels.
-      test_acc = int(test_correct.sum()) / int(data.test_mask.sum())  # Derive ratio of correct predictions.
-      return test_acc
+    model.eval()
+    out = model(data.x, data.edge_index)
+    out = torch.softmax(out, dim=1)
+    pred = torch.argmax(out, dim=1) # Use the class with highest probability.
+    print('predicitions: ', pred[data.test_mask])
+    print('ground truth: ', data.y[data.test_mask].reshape(-1))
+    test_correct = pred[data.test_mask] == data.y[data.test_mask].reshape(-1) # Check against ground-truth labels.
+    test_acc = int(test_correct.sum()) / int(data.test_mask.sum())  # Derive ratio of correct predictions.
+    return test_acc
 
 def load_dataset(df, labels):
     #iterate through the labels DF rows
@@ -73,28 +80,31 @@ def load_dataset(df, labels):
     #use sklearn pca to reduce the dimensionality of x to 500
     imp = SimpleImputer(missing_values=np.nan, strategy='mean')
     X = imp.fit_transform(X)
-    #pca = PCA(n_components=300)
-    #X = pca.fit_transform(X)
+    # X = pca.fit_transform(X)
+    # pca = PCA(n_components=NUM_FEATURE)
     #Scale between 0 and 1
     X = (X-np.min(X))/(np.max(X)-np.min(X))
     #normalize X to 0 mean and 1 variance
     X = sklearn.preprocessing.scale(X)
     X = torch.from_numpy(X)
     Y = torch.from_numpy(Y).long()
+
     return X, Y
 
 
 if __name__ == '__main__':
-    df = pd.read_csv('methylation_table.csv')
-    labels = pd.read_csv('labels.csv')
+    df = pd.read_csv('fpkm.csv')
+    labels = pd.read_csv('labels.csv', header=0)
     X, y = load_dataset(df, labels)
-     #Compute correlation between instances to get the edges
+    
+    #Compute correlation between instances to get the edges
     correlation = torch.from_numpy(np.where(torch.tensor(np.corrcoef(X))>0.0, 1, 0))
     for i in range(correlation.shape[0]):
         correlation[i, i] = 0
     #make correlation a sparse matrix
     edge_index = torch.nonzero(correlation).t()
     data = torch_geometric.data.Data(x=X, edge_index=edge_index, y=y)
+
     #create train and test masks
     train_mask = torch.zeros(data.num_nodes, dtype=torch.bool)
     test_mask = torch.zeros(data.num_nodes, dtype=torch.bool)
@@ -104,27 +114,37 @@ if __name__ == '__main__':
     data.test_mask = test_mask
 
     #Instantiate the model, loss function and optimizer
-    model = GCN(num_features=X.shape[1], hidden_channels=1000, hidden_channels2=100, num_classes=3)
+    model = GCN(num_features=X.shape[1], hidden_channels=400, num_classes=3)
     criterion = torch.nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
+    lr = 0.01
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     
     #train
     model.train()
-    for epoch in range(20):
+    torch.autograd.set_detect_anomaly(True)
+    best_acc = 0
+    #train
+    
+    for epoch in range(200):
         model.train()
+        if epoch % 10 == 0:
+            lr = lr * 0.5
+            optimizer = torch.optim.Adam(model.parameters(), lr=lr)
         optimizer.zero_grad()  # Clear gradients.
         out = model(data.x, data.edge_index)  # Perform a single forward pass.
         loss = criterion(out[data.train_mask],data.y[data.train_mask].reshape(-1))  # Compute the loss solely based on the training nodes.
         loss.backward()  # Derive gradients.
         optimizer.step()  # Update parameters based on gradients.
-        print(f'Epoch: {epoch:03d}, Loss: {loss:.4f}')
-        #save the whole model
-        torch.save(model, 'model.pt')
         model.eval()
         test_acc = test(model, data)
+        print(f'Epoch: {epoch:03d}, Loss: {loss:.4f}')
         print(f'Test Accuracy: {test_acc:.4f}')
+        if test_acc > best_acc:
+            best_acc = test_acc
+            torch.save(model, 'model.pt')
     
     #test
     model.eval()
     test_acc = test(model, data)
     print(f'Test Accuracy: {test_acc:.4f}')
+    

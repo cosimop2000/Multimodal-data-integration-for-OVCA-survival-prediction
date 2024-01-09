@@ -28,3 +28,4 @@ __pycache__/
 *.tsv
 Data/config.ini
 model.pt
+*.pt
