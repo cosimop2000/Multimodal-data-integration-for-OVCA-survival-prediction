@@ -29,3 +29,6 @@ __pycache__/
 Data/config.ini
 model.pt
 *.pt
+
+*.svs
+*.h5
