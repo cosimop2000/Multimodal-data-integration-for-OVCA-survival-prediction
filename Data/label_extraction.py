@@ -23,6 +23,10 @@ if __name__ == "__main__":
     json_file_path = parser['clinical']['json_file_path']
     labels = get_label(json_file_path)
     print(len(labels))
-    df = pd.DataFrame.from_dict(labels, orient='index')
-    df.to_csv('labels.csv', header=False)
+    df = pd.DataFrame.from_dict(labels, orient='index', columns=["daysToDeath"])
+
+    output = parser['clinical']['output']
+    if not output: output = 'labels.csv'
+    tsv = output.endswith('.tsv')
+    df.to_csv(output, header=df.columns, index_label='id', sep='\t' if tsv else ',')
     

@@ -95,9 +95,6 @@ result_df = data_processor.process_data()
 print(result_df)
 
 # Save result_df as CSV file
-if uq:
-    result_df.to_csv('fpkm_uq.csv', index=True)
-    pass
-else:
-    result_df.to_csv('fpkm.csv', index=True)
-    pass
+output = parser['expression']['output'] if parser['expression']['output'] else f"fpkm{'uq' if uq else ''}.csv" 
+tsv = output.endswith('.tsv')
+result_df.to_csv(output, index=True, sep='\t' if tsv else ',')
