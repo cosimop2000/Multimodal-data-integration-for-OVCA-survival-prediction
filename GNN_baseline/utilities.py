@@ -24,23 +24,29 @@ def load_dataset(df, labels, task='classification', pca_components=300):
     X = df.values.astype(np.float32)
     if task == 'classification':
         #scale Y between 0 and 1
-        Y = (Y-np.min(Y))/(np.max(Y)-np.min(Y))
+        #Y = (Y-np.min(Y))/(np.max(Y)-np.min(Y))
         #discretize Y in 3 classes:
-        Y = np.where(Y<0.2, 0, Y)
-        Y = np.where(Y>0.5, 2, Y)
-        Y = np.where((Y>=0.2) & (Y<=0.5), 1, Y)
-    #use sklearn pca to reduce the dimensionality of x to 500
+        Y =np.where(Y < 4*365, 0, 1)
+        # Y = np.where(Y<2*365, 0, Y)
+        # Y = np.where(Y>1825, 2, Y)
+        # Y = np.where((Y>=2*365) & (Y<=1825), 1, Y)
+    #use sklearn pca to reduce the dimensionality of x to 300
     imp = SimpleImputer(missing_values=np.nan, strategy='mean')
     X = imp.fit_transform(X)
     if pca_components > 0:
         pca = PCA(n_components=pca_components)
         X = pca.fit_transform(X)
-    #Scale between 0 and 1
-    X = (X-np.min(X))/(np.max(X)-np.min(X))
+    #Scale between 0 and 1, for each feature
+    X = (X-np.min(X, axis=0))/(np.max(X, axis=0)-np.min(X, axis=0))
+
     #normalize X to 0 mean and 1 variance
     X = sklearn.preprocessing.scale(X)
     X = torch.from_numpy(X)
     Y = torch.from_numpy(Y)
+    #shuffle x and y accordingly
+    perm = torch.randperm(X.shape[0])
+    X = X[perm]
+    Y = Y[perm]
     if task == 'classification':
         Y = Y.long()
     return X, Y
@@ -78,5 +84,47 @@ def test_GNN(model, data, task='classification', verbose=False):
     if verbose:
         print('predicitions: ', out[data.test_mask])
         print('ground truth: ', data.y[data.test_mask].reshape(-1))
+        precision = torch.zeros(3)
+        recall = torch.zeros(3)
+        for i in range(3):
+            tp = torch.sum((out[data.test_mask]==i) & (data.y[data.test_mask].reshape(-1)==i))
+            fp = torch.sum((out[data.test_mask]==i) & (data.y[data.test_mask].reshape(-1)!=i))
+            fn = torch.sum((out[data.test_mask]!=i) & (data.y[data.test_mask].reshape(-1)==i))
+            precision[i] = tp/(tp+fp)
+            recall[i] = tp/(tp+fn)
+        f1 = 2*precision*recall/(precision+recall)
+        print('precision: ', precision)
+        print('recall: ', recall)
+        print('f1: ', f1)
+    return test_acc
+
+def test_MLP(model, X_test, y_test, task='classification', verbose=False):
+    model.eval()
+    out = model(X_test)
+    test_acc = 0
+    if task == 'classification':
+        out = torch.softmax(out, dim=1)
+        out = torch.argmax(out, dim=1) # Use the class with highest probability.
+        test_correct = out == y_test.reshape(-1) # Check against ground-truth labels.
+        test_acc = int(test_correct.sum()) / int(y_test.shape[0])  # Derive ratio of correct predictions.
+    if task == 'regression':
+        #compute MSE
+        loss = torch.nn.L1Loss()
+        test_acc = loss(out,y_test.reshape(-1)) 
+    if verbose:
+        print('predicitions: ', out)
+        print('ground truth: ', y_test.reshape(-1))
+        precision = torch.zeros(3)
+        recall = torch.zeros(3)
+        for i in range(3):
+            tp = torch.sum((out==i) & (y_test.reshape(-1)==i))
+            fp = torch.sum((out==i) & (y_test.reshape(-1)!=i))
+            fn = torch.sum((out!=i) & (y_test.reshape(-1)==i))
+            precision[i] = tp/(tp+fp)
+            recall[i] = tp/(tp+fn)
+        f1 = 2*precision*recall/(precision+recall)
+        print('precision: ', precision)
+        print('recall: ', recall)
+        print('f1: ', f1)
     return test_acc
 

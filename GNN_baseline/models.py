@@ -59,3 +59,17 @@ class GATsmall(torch.nn.Module):
         x = x.relu()
         x = self.conv2(x, edge_index)
         return x
+
+class bayesianFCN(torch.nn.Module):
+    def __init__(self, num_features, hidden_channels, num_classes):
+        super().__init__()
+        #torch.manual_seed(1234567)
+        self.fc1 = torch.nn.Linear(num_features, hidden_channels)
+        self.fc2 = torch.nn.Linear(hidden_channels, num_classes)
+
+    def forward(self, x):
+        x = self.fc1(x)
+        x = x.relu()
+        x = F.dropout(x, p=0.8, training=self.training)
+        x = self.fc2(x)
+        return x
