@@ -30,3 +30,7 @@ if __name__ == "__main__":
     tsv = output.endswith('.tsv')
     df.to_csv(output, header=df.columns, index_label='id', sep='\t' if tsv else ',')
     
+    if parser['clinical']['save_ids']:
+        with open('id.txt', 'w') as fs:
+            fs.write('\n'.join(df.index.to_list()))
+    
