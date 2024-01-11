@@ -93,7 +93,7 @@ class SharedAndSpecificLoss(nn.Module):
                                       label * torch.pow(torch.clamp(self.margin - euclidean_distance, min=0.0), 2))
         return loss_contrastive
 
-    def forward(self, view1_specific, view1_shared, view2_specific, view2_shared, view3_specific, view3_shared, t):
+    def forward(self, view1_specific, view1_shared, view2_specific, view2_shared, t):#, view3_specific, view3_shared, t):
         # orthogonal restrict
         orthogonal_loss1 = self.orthogonal_loss(view1_shared, view1_specific)
         orthogonal_loss2 = self.orthogonal_loss(view2_shared, view2_specific)
@@ -405,8 +405,8 @@ def main():
             train_labels = np.squeeze(label.numpy())
 
             t_train_labels = copy.copy(train_labels[::-1])
-            batch_t = np.array(train_labels == t_train_labels, dtype=np.long)
-            batch_shared_t = np.array(train_labels == train_labels, dtype=np.long)
+            batch_t = np.array(train_labels == t_train_labels, dtype=np.longlong)
+            batch_shared_t = np.array(train_labels == train_labels, dtype=np.longlong)
 
             # To Variable
             if USE_GPU:
