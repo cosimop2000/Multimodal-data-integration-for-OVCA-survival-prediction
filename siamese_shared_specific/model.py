@@ -484,12 +484,12 @@ def main():
             # scio.savemat('E:/Data/GBM_all.mat', {'GBM_all': batch_classification_output.detach().cpu().numpy()})
             # scio.savemat('E:/Data/GBM_all_label.mat', {'GBM_all_label': train_labels.detach().cpu().numpy()})
 
-            scio.savemat('E:/Data/GBM_specific1.mat', {'GBM_specific1': batch_view1_specific.detach().cpu().numpy()})
-            scio.savemat('E:/Data/GBM_specific2.mat', {'GBM_specific2': batch_view2_specific.detach().cpu().numpy()})
-            scio.savemat('E:/Data/GBM_shared1.mat', {'GBM_shared1': batch_view1_shared.detach().cpu().numpy()})
-            scio.savemat('E:/Data/GBM_shared2.mat', {'GBM_shared2': batch_view2_shared.detach().cpu().numpy()})
-
-            scio.savemat('E:/Data/GBM_component_label.mat', {'GBM_component_label': train_labels.detach().cpu().numpy()})
+            #scio.savemat('E:/Data/GBM_specific1.mat', {'GBM_specific1': batch_view1_specific.detach().cpu().numpy()})
+            #scio.savemat('E:/Data/GBM_specific2.mat', {'GBM_specific2': batch_view2_specific.detach().cpu().numpy()})
+            #scio.savemat('E:/Data/GBM_shared1.mat', {'GBM_shared1': batch_view1_shared.detach().cpu().numpy()})
+            #scio.savemat('E:/Data/GBM_shared2.mat', {'GBM_shared2': batch_view2_shared.detach().cpu().numpy()})
+#
+            #scio.savemat('E:/Data/GBM_component_label.mat', {'GBM_component_label': train_labels.detach().cpu().numpy()})
 
             # calculation training acc
             total += len(train_labels)
