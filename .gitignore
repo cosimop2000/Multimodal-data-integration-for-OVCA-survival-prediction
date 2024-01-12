@@ -34,3 +34,5 @@ model.pt
 *.h5
 *.jpg
 
+*.png
+siamese_shared_specific/model copy.py

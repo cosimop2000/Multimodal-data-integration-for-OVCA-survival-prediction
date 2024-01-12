@@ -3,14 +3,15 @@ import torch
 import pandas as pd
 import sklearn
 import numpy as np
-
+import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import StandardScaler
 
 
 
 class dataset(data.Dataset):
-    def __init__(self, methylation_path = 'methylation_table.csv', gene_expr_path = 'fpkm.csv', labels_path = 'complete.csv'):
+    def __init__(self, methylation_path = 'methylation_table.csv', gene_expr_path = 'fpkm.csv', labels_path = 'dead.csv'):
         self.gene_expr, self.methylation, self.labels = self.load_data(methylation_path, gene_expr_path, labels_path)
 
     def load_data(self, methylation_path, gene_expr_path, labels_path):
@@ -31,11 +32,18 @@ class dataset(data.Dataset):
         Y = labels.astype(np.float32)
         X_m = df_methylation.values.astype(np.float32)
         X_g = df_gene_expr.values.astype(np.float32)
+        #discretize the labels in order to have 2 balanced classes
+        median = np.median(Y)
         Y =np.where(Y < 4*365, 0, 1)
         imp_m = SimpleImputer(missing_values=np.nan, strategy='mean')
         imp_g = SimpleImputer(missing_values=np.nan, strategy='mean')
         X_m = imp_m.fit_transform(X_m)
         X_g = imp_g.fit_transform(X_g)
+        #scale the values
+        scaler_m= StandardScaler()
+        scaler_g= StandardScaler()
+        X_m = scaler_m.fit_transform(X_m)
+        X_g = scaler_g.fit_transform(X_g)
         #shuffle x and y accordingly
         perm = torch.randperm(X_m.shape[0])
         X_m = torch.from_numpy(X_m[perm])
