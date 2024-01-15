@@ -4,7 +4,7 @@ import numpy as np
 
 
 if __name__ == '__main__':
-    with open('results.json') as json_file:
+    with open('results_ttv.json') as json_file:
         results = json.load(json_file)
         acc = results['acc']
         auc = results['auc']
