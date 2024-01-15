@@ -16,12 +16,28 @@ import itertools
 from .util_classes import isInContourV1, isInContourV2, isInContourV3_Easy, isInContourV3_Hard, \
     Contour_Checking_fn
 from .file_utils import load_pkl, save_pkl
+import json
 
-# The path can also be read from a config file, etc.
-OPENSLIDE_PATH = r'C:\\Users\\pavon\Downloads\\openslide-win64-20231011\\openslide-win64-20231011\\bin'
+# Load configuration from JSON file
+config_file_path = 'config.json'
+
+if not os.path.isfile(config_file_path):
+    raise FileNotFoundError(f"Configuration file '{config_file_path}' not found.")
+
+with open(config_file_path, 'r') as config_file:
+    config = json.load(config_file)
+
+# Extract the openslide path
+openslide_path = config.get('openslide_path', '')
+
+# Check if the openslide path is provided
+if not openslide_path:
+    raise ValueError("Openslide path is not specified in the configuration file.")
+
+# Use the openslide path
 if hasattr(os, 'add_dll_directory'):
     # Windows
-    with os.add_dll_directory(OPENSLIDE_PATH):
+    with os.add_dll_directory(openslide_path):
         import openslide
 else:
     import openslide

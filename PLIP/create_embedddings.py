@@ -2,6 +2,7 @@ from PIL import Image
 import os
 import torch
 from transformers import CLIPProcessor, CLIPModel
+import json
 
 
 def process_images_and_save_embeddings(model, processor, image_dir, output_dir, device):
@@ -29,8 +30,22 @@ if __name__ == "__main__":
     # Specify the device (cuda or cpu)
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    input_root_dir = "C:\\Users\\pavon\\Documents\\Bioinformatics_project\\PLIP\\images"
-    output_root_dir = "C:\\Users\\pavon\\Documents\\Bioinformatics_project\\PLIP\\embeddings"
+    # Load configuration from JSON file
+    config_file_path = 'config.json'
+
+    if not os.path.isfile(config_file_path):
+        raise FileNotFoundError(f"Configuration file '{config_file_path}' not found.")
+
+    with open(config_file_path, 'r') as config_file:
+        config = json.load(config_file)
+
+    # Extract the paths from the config
+    input_root_dir = config.get('input_root_dir', '')
+    output_root_dir = config.get('output_root_dir', '')
+
+    # Check if the paths are provided
+    if not input_root_dir or not output_root_dir:
+        raise ValueError("Input or output root directory is not specified in the configuration file.")
 
     for subdir in os.listdir(input_root_dir):
         subdir_path = os.path.join(input_root_dir, subdir)

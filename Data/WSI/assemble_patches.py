@@ -1,14 +1,31 @@
 import os
 import h5py
+import json
 
-# The path can also be read from a config file, etc.
-OPENSLIDE_PATH = r'C:\\Users\\pavon\Downloads\\openslide-win64-20231011\\openslide-win64-20231011\\bin'
+# Load configuration from JSON file
+config_file_path = 'config.json'
+
+if not os.path.isfile(config_file_path):
+    raise FileNotFoundError(f"Configuration file '{config_file_path}' not found.")
+
+with open(config_file_path, 'r') as config_file:
+    config = json.load(config_file)
+
+# Extract the openslide path
+openslide_path = config.get('openslide_path', '')
+
+# Check if the openslide path is provided
+if not openslide_path:
+    raise ValueError("Openslide path is not specified in the configuration file.")
+
+# Use the openslide path
 if hasattr(os, 'add_dll_directory'):
     # Windows
-    with os.add_dll_directory(OPENSLIDE_PATH):
+    with os.add_dll_directory(openslide_path):
         from openslide import OpenSlide
 else:
     from openslide import OpenSlide
+
 
 from PIL import Image
 
@@ -60,24 +77,20 @@ def process_directories(h5_directory, svs_directory, output_base_directory, patc
             # Extract and save patches to the created directory
             extract_and_save_patches(svs_path, patch_coords, patch_size, output_directory)
 
-# Example single usage:
-"""
-
-svs_path = ("C:\\Users\\pavon\\Documents\\Bioinformatics_project\\"
-            "Data\\WSI\\DATA_DIRECTORY\\TCGA-25-1878-01A-01-TS1.d6219de6-280f-4dd9-ab5d-4598c4781b14.svs")
-h5_file_path = ("C:\\Users\\pavon\\Documents\\Bioinformatics_project\\Data\\WSI\\RESULTS_DIRECTORY\\"
-                "patches\\TCGA-25-1878-01A-01-TS1.d6219de6-280f-4dd9-ab5d-4598c4781b14.h5")
-patch_size = 256  # Adjust the patch size as needed
-output_directory = "C:\\Users\\pavon\\Documents\\Bioinformatics_project\\PLIP\\images"
-
-patch_coords = read_patch_coords_from_h5(h5_file_path)
-extract_and_save_patches(svs_path, patch_coords, patch_size, output_directory)
-
-"""
-
 
 # Example usage:
-h5_directory = "C:\\Users\\pavon\\Documents\\Bioinformatics_project\\Data\\WSI\\RESULTS_DIRECTORY\\patches"
-svs_directory = "C:\\Users\\pavon\\Documents\\Bioinformatics_project\\Data\\WSI\\DATA_DIRECTORY"
-output_base_directory = "C:\\Users\\pavon\\Documents\\Bioinformatics_project\\PLIP\\images"
+config_file_path = 'config.json'
+
+if not os.path.isfile(config_file_path):
+    raise FileNotFoundError(f"Configuration file '{config_file_path}' not found.")
+
+with open(config_file_path, 'r') as config_file:
+    config = json.load(config_file)
+
+h5_directory = config.get('h5_directory', '')
+svs_directory = config.get('svs_directory', '')
+output_base_directory = config.get('output_base_directory', '')
+
+if not h5_directory or not svs_directory or not output_base_directory:
+    raise ValueError("h5_directory, svs_directory, and output_base_directory must be specified in the configuration file.")
 process_directories(h5_directory, svs_directory, output_base_directory)
