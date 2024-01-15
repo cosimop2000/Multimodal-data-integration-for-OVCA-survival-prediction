@@ -20,15 +20,13 @@ def read_patch_coords_from_h5(h5_file_path):
 
 def extract_and_save_patches(svs_path, patch_coords, patch_size, output_directory):
     # Open the whole-slide image
+    print(svs_path)
     slide = OpenSlide(svs_path)
 
     # Ensure the output directory exists
     os.makedirs(output_directory, exist_ok=True)
     i = 0
     for index, (x, y) in enumerate(patch_coords):
-        ++i
-        if i == 3:
-            break
         # Extract the patch from the whole-slide image
         patch = slide.read_region((x, y), 0, (patch_size, patch_size))
 
@@ -43,7 +41,28 @@ def extract_and_save_patches(svs_path, patch_coords, patch_size, output_director
     # Close the whole-slide image
     slide.close()
 
-# Example usage:
+
+def process_directories(h5_directory, svs_directory, output_base_directory, patch_size=256):
+    # Iterate through all .h5 files in the h5_directory
+    for h5_file_name in os.listdir(h5_directory):
+        if h5_file_name.endswith(".h5"):
+            # Form full paths for the .h5 file and corresponding .svs file
+            h5_file_path = os.path.join(h5_directory, h5_file_name)
+            svs_file_name = os.path.splitext(h5_file_name)[0] + ".svs"
+            svs_path = os.path.join(svs_directory, svs_file_name)
+
+            # Create a directory based on the .h5 file name in the output base directory
+            output_directory = os.path.join(output_base_directory, os.path.splitext(h5_file_name)[0])
+
+            # Read patch coordinates from the .h5 file
+            patch_coords = read_patch_coords_from_h5(h5_file_path)
+
+            # Extract and save patches to the created directory
+            extract_and_save_patches(svs_path, patch_coords, patch_size, output_directory)
+
+# Example single usage:
+"""
+
 svs_path = ("C:\\Users\\pavon\\Documents\\Bioinformatics_project\\"
             "Data\\WSI\\DATA_DIRECTORY\\TCGA-25-1878-01A-01-TS1.d6219de6-280f-4dd9-ab5d-4598c4781b14.svs")
 h5_file_path = ("C:\\Users\\pavon\\Documents\\Bioinformatics_project\\Data\\WSI\\RESULTS_DIRECTORY\\"
@@ -53,3 +72,12 @@ output_directory = "C:\\Users\\pavon\\Documents\\Bioinformatics_project\\PLIP\\i
 
 patch_coords = read_patch_coords_from_h5(h5_file_path)
 extract_and_save_patches(svs_path, patch_coords, patch_size, output_directory)
+
+"""
+
+
+# Example usage:
+h5_directory = "C:\\Users\\pavon\\Documents\\Bioinformatics_project\\Data\\WSI\\RESULTS_DIRECTORY\\patches"
+svs_directory = "C:\\Users\\pavon\\Documents\\Bioinformatics_project\\Data\\WSI\\DATA_DIRECTORY"
+output_base_directory = "C:\\Users\\pavon\\Documents\\Bioinformatics_project\\PLIP\\images"
+process_directories(h5_directory, svs_directory, output_base_directory)
