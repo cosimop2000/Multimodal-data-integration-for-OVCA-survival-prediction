@@ -7,7 +7,7 @@ def delete_png_files_in_directory(directory):
             if file.endswith(".png") or file.endswith(".jpg"):
                 file_path = os.path.join(root, file)
                 os.remove(file_path)
-                print(f"Deleted: {file_path}")
+                # print(f"Deleted: {file_path}")
 
 
 # Load configuration from JSON file

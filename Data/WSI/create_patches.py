@@ -280,7 +280,7 @@ if __name__ == '__main__':
     patch_params = {'use_padding': True, 'contour_fn': 'four_pt'}
 
     if args.presets:
-        preset_df = pd.read_csv(os.path.join('presets', args.presets))
+        preset_df = pd.read_csv(os.path.join('Data\\WSI\\presets\\', args.presets))
         for key in seg_params.keys():
             seg_params[key] = preset_df.loc[0, key]
 
