@@ -45,7 +45,7 @@ for i, id in enumerate(ids):
     with open(file_name, "wb") as output_file:
         output_file.write(response.content)
     print(f"file {i} downloaded")
-    if i % batch_size == 0:
+    if i % batch_size == 0 and i != 0:
         #DO THE PROCESSSING AND SAVE THE EMBEDDINGS HERE
         #remove files in the file_names list
         for file in batch_file_names:
