@@ -3,6 +3,7 @@ import json
 import re
 import os
 import subprocess
+import threading
 
 create_patches_path = os.path.abspath(os.path.join('.', 'Data\\WSI\\create_patches.py')) 
 asseemble_patches_path = os.path.abspath(os.path.join('.', 'Data\\WSI\\assemble_patches.py'))
@@ -33,14 +34,28 @@ delete_patches = [
     'python', delete_patches_path,
 ]
 
+def process_batch():
+    print("CREATING PATCHES")
+    subprocess.run(create_patches)
+    print("ASSEMBLING PATCHES")
+    subprocess.run(asseemble_patches)
+    print("DELETING IMAGES")
+    subprocess.run(delete_images)
+    print("CREATING EMBEDDINGS")
+    subprocess.run(create_embeddings)
+    print("DELETING PATCHES")
+    subprocess.run(delete_patches)
 
 
 files_endpt = "https://api.gdc.cancer.gov/files"
-
+data_dir = 'Data\\WSI\\DATA_DIRECTORY'
 with open('Data/query_only_dead.json') as json_file:  
     filters = json.load(json_file)
-resume = False
+resume = True
 params = {}
+file_uuid_list = []
+batch_file_names = []
+all_file_names = []
 if not resume:
     # Here a GET is used, so the filter parameters should be passed as a JSON string.
     params = {
@@ -51,16 +66,12 @@ if not resume:
         }
 
     response = requests.get(files_endpt, params = params)
-
-    file_uuid_list = []
-    batch_file_names = []
-    all_file_names = []
     # This step populates the download list with the file_ids from the previous query
     for file_entry in json.loads(response.content.decode("utf-8"))["data"]["hits"]:
         file_uuid_list.append(file_entry["file_id"])
 
     data_endpt = "https://api.gdc.cancer.gov/data"
-    data_dir = 'Data\\WSI\\DATA_DIRECTORY'
+    
     if not os.path.exists(data_dir):
         os.makedirs(data_dir)
     params = {"ids": file_uuid_list, "iter":0}
@@ -80,8 +91,15 @@ for i, id in enumerate(ids):
     with open("Data/ids.json", "w") as output_file:
         json.dump(params, output_file)
     data_endpt = "https://api.gdc.cancer.gov/data/{}".format(id)
-    response = requests.get(data_endpt, headers = {"Content-Type": "application/json"})
-
+    done = 0
+    while done != 1:
+        try:
+            response = requests.get(data_endpt, headers = {"Content-Type": "application/json"})
+            done = 1
+            print(f"file {i} downloaded")
+        except:
+            print("error, retrying")
+            done = 0
     # The file name can be found in the header within the Content-Disposition key.
     response_head_cd = response.headers["Content-Disposition"]
 
@@ -91,16 +109,7 @@ for i, id in enumerate(ids):
         output_file.write(response.content)
     print(f"file {i} downloaded")
     if i % batch_size == 0:
-        print("CREATING PATCHES")
-        subprocess.run(create_patches)
-        print("ASSEMBLING PATCHES")
-        subprocess.run(asseemble_patches)
-        print("DELETING IMAGES")
-        subprocess.run(delete_images)
-        print("CREATING EMBEDDINGS")
-        subprocess.run(create_embeddings)
-        print("DELETING PATCHES")
-        subprocess.run(delete_patches)
+        process_batch()
     names = {}
 names['names'] = all_file_names
 with open("Data/names.json", "w") as output_file:
