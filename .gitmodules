@@ -1,0 +1,3 @@
+[submodule "VAE/customics"]
+	path = VAE/customics
+	url = https://github.com/HakimBenkirane/CustOmics.git
