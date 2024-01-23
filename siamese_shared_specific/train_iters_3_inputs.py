@@ -10,7 +10,7 @@ import copy
 from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
 import json
-from siamese_model import *
+from siamese_model_3_inputs import *
 
 
 
@@ -24,7 +24,7 @@ def main():
     verbose = True
     for run in range (runs):
         # Hyper Parameters
-        EPOCH = 50  # 138 train the training data n times, to save time, we just train 1 epoch
+        EPOCH = 80  # 138 train the training data n times, to save time, we just train 1 epoch
         BATCH_SIZE = 300
         USE_GPU = True
 
@@ -32,13 +32,13 @@ def main():
 
         train_size = 0.8
         test_size = 1 - train_size
-        data = dataset(impute=False)
+        data = dataset(impute=False, embeddings='ids_files.json')
         #split data in train, test and validation datasets
         train_data, test_data = torch.utils.data.random_split(data, [int(train_size*len(data))+1, int(test_size*len(data))])
 
         # Build Model                                                                                                              #1024
-        model = SiameseSharedAndSpecificClassifier(original_size=[train_data[0][0].shape[0], train_data[0][1].shape[0]], view_size=[512, 256, 128], out_size=32, c_n_units=[64, 32])
-        SharedSpecific1 = SharedAndSpecific1(view_size=[train_data[0][0].shape[0], train_data[0][1].shape[0]], n_unit=[1024, 1024], out_size=256)
+        model = SiameseSharedAndSpecificClassifier(original_size=[train_data[0][0].shape[0], train_data[0][1].shape[0], train_data[0][2].shape[0]], view_size=[512, 256, 128], out_size=32, c_n_units=[64, 32])
+        SharedSpecific1 = SharedAndSpecific1(view_size=[train_data[0][0].shape[0], train_data[0][1].shape[0], train_data[0][2].shape[0]], n_unit=[1024, 1024, 1024], out_size=256)
         SharedSpecific2 = SharedAndSpecific2(view_size=[256, 128])
         SharedSpecific3 = SharedAndSpecific3(view_size=[128, 32])
         # print(model)
@@ -77,7 +77,7 @@ def main():
         test_loader = torch.utils.data.DataLoader(dataset=test_data, batch_size=59, shuffle=True)
         #lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=15, gamma=0.5)
         total_loss = 1e10
-        lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.5)
+        lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=50, gamma=0.5)
         for epoch in range(EPOCH):
 
             # training epoch
@@ -94,12 +94,12 @@ def main():
             test_pre = 0.0
             test_recall = 0.0
             for iter, traindata in enumerate(train_loader):
-                batch_view1, batch_view2, label = traindata  #batch_view3
+                batch_view1, batch_view2, batch_view3, label = traindata  #batch_view3
 
                 # Siamese input
                 batch_view1 = batch_view1.numpy()
                 batch_view2 = batch_view2.numpy()
-                # batch_view3 = batch_view3.numpy()
+                batch_view3 = batch_view3.numpy()
                 train_labels = np.squeeze(label.numpy())
 
                 t_train_labels = copy.copy(train_labels[::-1])
@@ -110,14 +110,14 @@ def main():
                 if USE_GPU:
                     batch_view1 = Variable(torch.from_numpy(batch_view1)).type(torch.cuda.FloatTensor)
                     batch_view2 = Variable(torch.from_numpy(batch_view2)).type(torch.cuda.FloatTensor)
-                    #batch_view3 = Variable(torch.from_numpy(batch_view3)).type(torch.cuda.FloatTensor)
+                    batch_view3 = Variable(torch.from_numpy(batch_view3)).type(torch.cuda.FloatTensor)
                     train_labels = Variable(torch.from_numpy(train_labels)).type(torch.cuda.LongTensor)
                     batch_t = Variable(torch.from_numpy(batch_t)).type(torch.cuda.FloatTensor)
                     batch_shared_t = Variable(torch.from_numpy(batch_shared_t)).type(torch.cuda.FloatTensor)
                 else:
                     batch_view1 = Variable(torch.from_numpy(batch_view1)).type(torch.FloatTensor)
                     batch_view2 = Variable(torch.from_numpy(batch_view2)).type(torch.FloatTensor)
-                    #batch_view3 = Variable(torch.from_numpy(batch_view3)).type(torch.FloatTensor)
+                    batch_view3 = Variable(torch.from_numpy(batch_view3)).type(torch.FloatTensor)
                     train_labels = Variable(torch.from_numpy(train_labels)).type(torch.LongTensor)
                     batch_t = Variable(torch.from_numpy(batch_t)).type(torch.FloatTensor)
                     batch_shared_t = Variable(torch.from_numpy(batch_shared_t)).type(torch.FloatTensor)
@@ -125,12 +125,14 @@ def main():
                 # Train Multiple group network 1 ==========================================================================
                 SharedSpecific1_optimizer.zero_grad()
                 batch_view1_specific1, batch_view1_shared1, batch_view2_specific1, batch_view2_shared1, \
-                    = SharedSpecific1(view1_input=batch_view1.detach(), view2_input=batch_view2.detach()) #,
-                                      #view3_input=batch_view3.detach())
+                batch_view3_specific1, batch_view3_shared1 \
+                    = SharedSpecific1(view1_input=batch_view1.detach(), view2_input=batch_view2.detach(),
+                                  view3_input=batch_view3.detach())
 
                 comsp_loss1 = SharedSpecific1_loss(view1_specific=batch_view1_specific1, view1_shared=batch_view1_shared1,
-                                                   view2_specific=batch_view2_specific1, view2_shared=batch_view2_shared1,
-                                                   t=batch_shared_t)
+                                               view2_specific=batch_view2_specific1, view2_shared=batch_view2_shared1,
+                                               view3_specific=batch_view3_specific1, view3_shared=batch_view3_shared1,
+                                               t=batch_shared_t)
 
                 comsp_loss1.backward()
                 SharedSpecific1_optimizer.step()
@@ -138,14 +140,18 @@ def main():
                 # Train Multiple group network 2 ==========================================================================
                 SharedSpecific2_optimizer.zero_grad()
                 batch_view1_specific2, batch_view1_shared2, batch_view2_specific2, batch_view2_shared2, \
+                batch_view3_specific2, batch_view3_shared2 \
                     = SharedSpecific2(input_view1_specific=batch_view1_specific1.detach(),
-                                      input_view1_shared=batch_view1_shared1.detach(),
-                                      input_view2_specific=batch_view2_specific1.detach(),
-                                      input_view2_shared=batch_view2_shared1.detach())
+                                  input_view1_shared=batch_view1_shared1.detach(),
+                                  input_view2_specific=batch_view2_specific1.detach(),
+                                  input_view2_shared=batch_view2_shared1.detach(),
+                                  input_view3_specific=batch_view3_specific1.detach(),
+                                  input_view3_shared=batch_view3_shared1.detach())
 
                 comsp_loss2 = SharedSpecific2_loss(view1_specific=batch_view1_specific2, view1_shared=batch_view1_shared2,
-                                                   view2_specific=batch_view2_specific2, view2_shared=batch_view2_shared2,
-                                                   t=batch_shared_t)
+                                               view2_specific=batch_view2_specific2, view2_shared=batch_view2_shared2,
+                                               view3_specific=batch_view3_specific2, view3_shared=batch_view3_shared2,
+                                               t=batch_shared_t)
 
                 comsp_loss2.backward()
                 SharedSpecific2_optimizer.step()
@@ -153,14 +159,18 @@ def main():
                 # Train Multiple group network 3 ==========================================================================
                 SharedSpecific3_optimizer.zero_grad()
                 batch_view1_specific3, batch_view1_shared3, batch_view2_specific3, batch_view2_shared3, \
+                batch_view3_specific3, batch_view3_shared3, \
                     = SharedSpecific3(input_view1_specific=batch_view1_specific2.detach(),
-                                      input_view1_shared=batch_view1_shared2.detach(),
-                                      input_view2_specific=batch_view2_specific2.detach(),
-                                      input_view2_shared=batch_view2_shared2.detach())
+                                  input_view1_shared=batch_view1_shared2.detach(),
+                                  input_view2_specific=batch_view2_specific2.detach(),
+                                  input_view2_shared=batch_view2_shared2.detach(),
+                                  input_view3_specific=batch_view3_specific2.detach(),
+                                  input_view3_shared=batch_view3_shared2.detach())
 
                 comsp_loss3 = SharedSpecific3_loss(view1_specific=batch_view1_specific3, view1_shared=batch_view1_shared3,
-                                                   view2_specific=batch_view2_specific3, view2_shared=batch_view2_shared3,
-                                                   t=batch_shared_t)
+                                               view2_specific=batch_view2_specific3, view2_shared=batch_view2_shared3,
+                                               view3_specific=batch_view3_specific3, view3_shared=batch_view3_shared3,
+                                               t=batch_shared_t)
 
                 comsp_loss3.backward()
                 SharedSpecific3_optimizer.step()
@@ -170,9 +180,9 @@ def main():
                 # update the generator
 
                 optimizer.zero_grad()
-                batch_view1_specific, batch_view1_shared, batch_view2_specific, batch_view2_shared,\
+                batch_view1_specific, batch_view1_shared, batch_view2_specific, batch_view2_shared, batch_view3_specific, batch_view3_shared, \
                 batch_siamese_code, batch_classification_output \
-                    = model(batch_view1, batch_view2)
+                    = model(batch_view1, batch_view2, batch_view3)
 
                 loss = loss_function(siamese_code=batch_siamese_code, classification_output=batch_classification_output,
                                      target=train_labels, t=batch_t)
@@ -211,22 +221,23 @@ def main():
 
             # testing epoch ========================================================================================
             for iter, testdata in enumerate(test_loader):
-                test_view1_inputs, test_view2_inputs, test_labels = testdata
+                test_view1_inputs, test_view2_inputs, test_view3_inputs, test_labels = testdata
                 test_labels = torch.squeeze(test_labels)
 
                 if USE_GPU:
-                    test_view1_inputs, test_view2_inputs, test_labels \
-                        = Variable(test_view1_inputs.cuda()), \
-                          Variable(test_view2_inputs.cuda()), \
-                           test_labels.cuda()
+                    test_view1_inputs, test_view2_inputs, test_view3_inputs, test_labels \
+                        = Variable(test_view1_inputs.cuda().type(torch.cuda.FloatTensor)), \
+                          Variable(test_view2_inputs.cuda().type(torch.cuda.FloatTensor)), \
+                          Variable(test_view3_inputs.cuda().type(torch.cuda.FloatTensor)), test_labels.cuda()
                 else:
                     test_view1_inputs = Variable(test_view1_inputs).type(torch.FloatTensor)
                     test_view2_inputs = Variable(test_view2_inputs).type(torch.FloatTensor)
+                    test_view3_inputs = Variable(test_view3_inputs).type(torch.FloatTensor)
                     test_labels = Variable(test_labels).type(torch.LongTensor)
 
-                view1_specific, view1_shared, view2_specific, view2_shared,\
+                view1_specific, view1_shared, view2_specific, view2_shared, view3_specific, view3_shared, \
                 siamese_code, classification_output = \
-                    model.forward(test_view1_inputs, test_view2_inputs)
+                    model.forward(test_view1_inputs, test_view2_inputs, test_view3_inputs)
 
                 if epoch % 10 == 0 and plot:
                     tsne = TSNE(n_components=2, random_state=0, perplexity=30)
@@ -272,5 +283,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-

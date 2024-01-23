@@ -36,3 +36,4 @@ model.pt
 
 *.png
 siamese_shared_specific/model copy.py
+*.zip

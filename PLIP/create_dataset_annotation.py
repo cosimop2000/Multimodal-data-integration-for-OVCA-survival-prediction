@@ -32,6 +32,9 @@ dataset_dir = parser['embeddings']['embeddings_dataset']
 class_0_folder = os.path.join(parser['embeddings']['embeddings_dataset'],'class_1')
 class_1_folder = os.path.join(parser['embeddings']['embeddings_dataset'],'class_2')
 case_ids = {}
+#create a df three columns: filename, case_id, label
+
+
 for filename in os.listdir(dataset_dir):
     if filename.endswith(('.csv')):
         svs_filename = filename[:-4] + '.svs'
@@ -40,17 +43,29 @@ for filename in os.listdir(dataset_dir):
                 case_ids[filename] = file['cases'][0]['case_id']
                 break
 labels = get_label(label_file)
+ids_files = {}
 case_paths = {}
 for key in case_ids.keys():
     if case_ids[key] in labels.keys():
         if labels[case_ids[key]] < treshold:
             case_paths[os.path.join(class_0_folder, key)] = labels[case_ids[key]]
+            if case_ids[key] in ids_files.keys():
+                ids_files[case_ids[key]].append(os.path.join(class_0_folder, key))
+            else:
+                ids_files[case_ids[key]] = [os.path.join(class_0_folder, key)]
 
         else:
             case_paths[os.path.join(class_1_folder, key)] = labels[case_ids[key]]
+            if case_ids[key] in ids_files.keys():
+                ids_files[case_ids[key]].append(os.path.join(class_1_folder, key))
+            else:
+                ids_files[case_ids[key]] = [os.path.join(class_1_folder, key)]
+
+with open('ids_files.json', 'w') as fp:
+    json.dump(ids_files, fp)
 df=pd.DataFrame.from_dict(case_paths, orient='index', columns=["daysToDeath"])
 
-df['daysToDeath'] = np.where(df['daysToDeath'] < 4*365, 0, 1)
+df['daysToDeath'] = np.where(df['daysToDeath'] < treshold, 0, 1)
 output = parser['embeddings']['output']
 df.to_csv(output, header=None, index_label=None, sep=',')
 if not os.path.exists(class_0_folder):
@@ -58,7 +73,7 @@ if not os.path.exists(class_0_folder):
 if not os.path.exists(class_1_folder):
     os.mkdir(class_1_folder)
 for row in df.iterrows():
-    os.rename(os.path.join(parser['embeddings']['embeddings_dataset'], row[0].split('/')[-1]), row[0])
+    os.rename(os.path.join(parser['embeddings']['embeddings_dataset'], row[0].split(os.path.sep)[-1]), row[0])
 
         
 
