@@ -13,14 +13,15 @@ import random
 
 
 class dataset(data.Dataset):
-    def __init__(self, methylation_path = 'methylation_table.csv', gene_expr_path = 'fpkm_protein_coding.csv', labels_path = 'dead.csv', impute = False, embeddings = None):
+    def __init__(self, methylation_path = 'methylation_table.csv', gene_expr_path = 'fpkm_protein_coding.csv', labels_path = 'dead.csv', impute = False, embeddings = None, rand = True):
         if embeddings:
-            self.gene_expr, self.methylation, self.labels, self.embeddings, self.ids = self.load_data(methylation_path, gene_expr_path, labels_path, impute, embeddings)
+            self.gene_expr, self.methylation, self.labels, self.embeddings, self.ids = self.load_data(methylation_path, gene_expr_path, labels_path, impute, embeddings, rand)
+            self.rand = rand
         else:
             self.gene_expr, self.methylation, self.labels = self.load_data(methylation_path, gene_expr_path, labels_path, impute, embeddings)
             self.embeddings = None
 
-    def load_data(self, methylation_path, gene_expr_path, labels_path, impute, embeddings):
+    def load_data(self, methylation_path, gene_expr_path, labels_path, impute, embeddings, rand):
         df_methylation = pd.read_csv(methylation_path)
         df_gene_expr = pd.read_csv(gene_expr_path)
         labels = pd.read_csv(labels_path)
@@ -56,9 +57,9 @@ class dataset(data.Dataset):
             #remove the columns with nan values
             X_m = X_m[:,~np.isnan(X_m).any(axis=0)]
             X_g = X_g[:,~np.isnan(X_g).any(axis=0)]
-            #remove columns with all values equal to 0
-            # X_m = X_m[:,~np.all(X_m == 0, axis=0)]
-            # X_g = X_g[:,~np.all(X_g == 0, axis=0)]
+            #remove columns with 0 variance
+            # X_m = X_m[:,X_m.std(axis=0) != 0]
+            # X_g = X_g[:,X_g.std(axis=0) != 0]
         #scale the values
         scaler_m= StandardScaler()
         scaler_g= StandardScaler()
@@ -72,18 +73,42 @@ class dataset(data.Dataset):
         if not embeddings:
             return X_g, X_m, Y
         else:
+            for k in embeddings.keys():
+                list = []
+                maxes = []
+                if not rand:
+                    for file in embeddings[k]:
+                        df = pd.read_csv(file)
+                        ar = df.to_numpy()
+                        top10 = np.zeros([10, df.shape[1]])
+                        for i in range(10):
+                            max = np.max(np.sum(ar, axis=1))
+                            maxes.append(max)
+                            amax = np.argmax(np.sum(ar, axis=1))
+                            top10[i] = ar[amax]
+                            ar = np.delete(ar, amax, axis=0)
+                        list.append(top10)
+                    embeddings[k] = list
+                else:
+                    list = []
+                    for file in embeddings[k]:
+                        df = pd.read_csv(file)
+                        list.append(df)
+                    embeddings[k] = list
             return X_g, X_m, Y, embeddings, ids
 
     def __getitem__(self, index):
         if self.embeddings:
-            list = self.embeddings[self.ids.iloc[index]]
-            embed = random.choice(list)
-            df = pd.read_csv(embed)
-            #select 10 random rows from df
-            df = df.sample(n=10)
-            df = df.to_numpy()
-            df = df.reshape(-1)
-            return self.gene_expr[index], self.methylation[index], df, self.labels[index]
+            if not self.rand:
+                list = self.embeddings[self.ids.iloc[index]]
+                df = list[-1].reshape(-1)
+                return self.gene_expr[index], self.methylation[index], df, self.labels[index]
+            else:
+                list = self.embeddings[self.ids.iloc[index]]
+                df = random.choice(list)
+                df = df.sample(n=10)
+                df = df.to_numpy().reshape(-1)
+                return self.gene_expr[index], self.methylation[index], df, self.labels[index]
         else:
             return self.gene_expr[index], self.methylation[index], self.labels[index]
 
@@ -94,6 +119,6 @@ class dataset(data.Dataset):
 
 
 if __name__ == '__main__':
-    dataset = dataset()
+    dataset = dataset(impute = False, embeddings='ids_files.json')
     sample = dataset[0]
     print(len(dataset[0]))
