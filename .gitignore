@@ -1,7 +1,7 @@
 # Compiled Python files
 __pycache__/
 *.pyc
-
+*.pt
 # Virtual environment
 venv/
 
