@@ -8,7 +8,7 @@ import pathlib
 import numpy as np
 prob_dict = {}
 
-SINGLE = '/Users/jacksalici/Downloads/photo_5897626654967185077_y.jpg'
+SINGLE = None
 
 class ZeroShotClassifier:
     def __init__(self):
@@ -55,26 +55,34 @@ class ZeroShotClassifier:
 
 if __name__ == "__main__":
     text_list=['an image of tumoral ovarian tissue', 'an image of healthy ovarian tissue']
-    zsc = ZeroShotClassifier() #n image of ovarian cancer tissue
+    zsc = ZeroShotClassifier() 
     text_embeddings = zsc.get_text_embeddings(text_list)
+    
     parser = configparser.ConfigParser()
     parser.read('Data/config.ini')
 
 
     if not SINGLE: 
-
-        embeddings_dir = parser['embeddings']['embeddings_dir']
-        
+        embeddings_dir = parser['embeddings']['embeddings_dir']   
         for filename in pathlib.Path(embeddings_dir).glob('**/*.pt'):
             wsi_name = filename.parent.name
             patch_name = filename.name[:-len("_embedding.pt")]
 
-            image_embeddings = torch.load(filename).detach()
+            image_embeddings = torch.load(filename).detach().squeeze(1)
             probs = zsc.zero_shot_classification(image_embeddings, text_embeddings)
+            
+            print(probs)
+            
+            if wsi_name not in prob_dict: 
+                prob_dict[wsi_name] = {} 
+            prob_dict[wsi_name][patch_name] = probs.squeeze(1).tolist()
+            
+        with open(parser['embeddings']['zero_shot_classifier_probs'], 'w') as fs:
+            json.dump(prob_dict, fs)
     else:
         from PIL import Image
         image = Image.open(SINGLE)
-        image_embeddings = zsc.get_image_embeddings(image).detach()
+        image_embeddings = zsc.get_image_embeddings(image).detach().squeeze(1)
         probs = zsc.zero_shot_classification(image_embeddings, text_embeddings)
         print(probs)
         
