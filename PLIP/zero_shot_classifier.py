@@ -66,7 +66,7 @@ if __name__ == "__main__":
         embeddings_dir = parser['embeddings']['embeddings_dir']   
         for filename in pathlib.Path(embeddings_dir).glob('**/*.pt'):
             wsi_name = filename.parent.name
-            patch_name = filename.name[:-len("_embedding.pt")]
+            patch_name = filename.name
 
             image_embeddings = torch.load(filename).detach().squeeze(1)
             probs = zsc.zero_shot_classification(image_embeddings, text_embeddings)
@@ -75,7 +75,7 @@ if __name__ == "__main__":
             
             if wsi_name not in prob_dict: 
                 prob_dict[wsi_name] = {} 
-            prob_dict[wsi_name][patch_name] = probs.squeeze(1).tolist()
+            prob_dict[wsi_name][patch_name] = probs.squeeze().tolist()
             
         with open(parser['embeddings']['zero_shot_classifier_probs'], 'w') as fs:
             json.dump(prob_dict, fs)
