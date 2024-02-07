@@ -1,4 +1,4 @@
-# Multimodal-data-integration-for-OVCA-survival-prediction
+# Multimodal data integration for OVCA survival prediction
 
 ## AIM of the project
 
