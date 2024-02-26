@@ -10,11 +10,11 @@ We were able to reach an accuracy of 0.69 in overall survival binary classificat
 
 - `/Data` contains the script for data manipulation as well as the creation of the patches.
 - `/PLIP` contains the script for embeddings generation as well as zero-shot classification.
-- `/siamese_shared_specific` contains the scripts of the siamese network.
+- `/siamese_shared_specific` contains the scripts of the siamese network.
 - `/autoencoders` contains the scripts from other autoencoders models.
 - `/misc` contains miscellaneous single omics baselines test using GNN and MLPs.
 
-**All the input and output paths must be specified from the file `Data/config.ini` (see the example for the structure).**
+*All the input and output paths must be specified from the file `Data/config.ini` (see the example for the structure).*
 
 ### Data download and preprocessing
 
