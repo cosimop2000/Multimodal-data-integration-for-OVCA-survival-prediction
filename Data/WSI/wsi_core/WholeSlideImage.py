@@ -265,7 +265,7 @@ class WholeSlideImage(object):
 
         return img
 
-    def createPatches_bag_hdf5(self, save_path, patch_level=0, patch_size=256, step_size=256, save_coord=True,
+    def createPatches_bag_hdf5(self, save_path, patch_level=0, patch_size=1024, step_size=1024, save_coord=True,
                                **kwargs):
         contours = self.contours_tissue
         contour_holes = self.holes_tissue
@@ -291,7 +291,7 @@ class WholeSlideImage(object):
 
         return self.hdf5_file
 
-    def _getPatchGenerator(self, cont, cont_idx, patch_level, save_path, patch_size=256, step_size=256,
+    def _getPatchGenerator(self, cont, cont_idx, patch_level, save_path, patch_size=1024, step_size=1024,
                            custom_downsample=1,
                            white_black=True, white_thresh=15, black_thresh=50, contour_fn='four_pt', use_padding=True):
         start_x, start_y, w, h = cv2.boundingRect(cont) if cont is not None else (
@@ -379,7 +379,7 @@ class WholeSlideImage(object):
         return 0
 
     @staticmethod
-    def isInContours(cont_check_fn, pt, holes=None, patch_size=256):
+    def isInContours(cont_check_fn, pt, holes=None, patch_size=1024):
         if cont_check_fn(pt):
             if holes is not None:
                 return not WholeSlideImage.isInHoles(holes, pt, patch_size)
@@ -406,7 +406,7 @@ class WholeSlideImage(object):
 
         return level_downsamples
 
-    def process_contours(self, save_path, patch_level=0, patch_size=256, step_size=256, **kwargs):
+    def process_contours(self, save_path, patch_level=0, patch_size=1024, step_size=1024, **kwargs):
         save_path_hdf5 = os.path.join(save_path, str(self.name) + '.h5')
         print("Creating patches for: ", self.name, "...", )
         elapsed = time.time()
@@ -429,7 +429,7 @@ class WholeSlideImage(object):
 
         return self.hdf5_file
 
-    def process_contour(self, cont, contour_holes, patch_level, save_path, patch_size=256, step_size=256,
+    def process_contour(self, cont, contour_holes, patch_level, save_path, patch_size=1024, step_size=1024,
                         contour_fn='four_pt', use_padding=True, top_left=None, bot_right=None):
         start_x, start_y, w, h = cv2.boundingRect(cont) if cont is not None else (
         0, 0, self.level_dim[patch_level][0], self.level_dim[patch_level][1])
@@ -524,7 +524,7 @@ class WholeSlideImage(object):
 
     def visHeatmap(self, scores, coords, vis_level=-1,
                    top_left=None, bot_right=None,
-                   patch_size=(256, 256),
+                   patch_size=(1024, 1024),
                    blank_canvas=False, canvas_color=(220, 20, 50), alpha=0.4,
                    blur=False, overlap=0.0,
                    segment=True, use_holes=True,

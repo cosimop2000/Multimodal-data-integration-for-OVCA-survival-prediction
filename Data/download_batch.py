@@ -15,7 +15,7 @@ create_patches = [
     'python', create_patches_path, 
     '--source', 'Data\\WSI\\DATA_DIRECTORY', 
     '--save_dir', 'Data\\WSI\\RESULTS_DIRECTORY', 
-    '--patch_size', '256', 
+    '--patch_size', '1024', 
     '--presets', 'tcga.csv', 
     '--seg', 
     '--patch', 
@@ -86,6 +86,8 @@ batch_size = 1
 for i, id in enumerate(ids):
     if i < start:
         continue
+    if i>=37:
+        break
     print(f'starting from file {i}')
     params['iter'] = i
     with open("Data/ids.json", "w") as output_file:

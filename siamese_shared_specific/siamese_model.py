@@ -40,7 +40,7 @@ class SiameseSharedAndSpecificLoss(nn.Module):
         super(SiameseSharedAndSpecificLoss, self).__init__()
         self.margin = margin
 
-    # 对比损失
+
     def contrastive_loss(self, output1, output2, label):
         euclidean_distance = F.pairwise_distance(output1, output2)
         loss_contrastive = torch.mean((1 - label) * torch.pow(euclidean_distance, 2) +
@@ -74,7 +74,7 @@ class SharedAndSpecificLoss(nn.Module):
         super(SharedAndSpecificLoss, self).__init__()
         self.margin = margin
 
-    # 正交损失
+    
     @staticmethod
     def orthogonal_loss(shared, specific):
         shared = shared - shared.mean()
@@ -86,7 +86,7 @@ class SharedAndSpecificLoss(nn.Module):
         cost = F.relu(cost)
         return cost
 
-    # 对比损失GBMValidation
+
     def contrastive_loss(self, output1, output2, label):
         euclidean_distance = F.pairwise_distance(output1, output2)
         loss_contrastive = torch.mean((1 - label) * torch.pow(euclidean_distance, 2) +

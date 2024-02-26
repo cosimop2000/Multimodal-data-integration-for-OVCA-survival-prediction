@@ -306,7 +306,7 @@ def StitchCoords(hdf5_file_path, wsi_object, downscale=16, draw_grid=False, bg_c
 
 
 def SamplePatches(coords_file_path, save_file_path, wsi_object,
-                  patch_level=0, custom_downsample=1, patch_size=256, sample_num=100, seed=1, stitch=True, verbose=1,
+                  patch_level=0, custom_downsample=1, patch_size=1024, sample_num=100, seed=1, stitch=True, verbose=1,
                   mode='w'):
     file = h5py.File(coords_file_path, 'r')
     dset = file['coords']

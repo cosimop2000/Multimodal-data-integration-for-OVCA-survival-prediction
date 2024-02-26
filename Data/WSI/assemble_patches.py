@@ -59,7 +59,7 @@ def extract_and_save_patches(svs_path, patch_coords, patch_size, output_director
     slide.close()
 
 
-def process_directories(h5_directory, svs_directory, output_base_directory, patch_size=256):
+def process_directories(h5_directory, svs_directory, output_base_directory, patch_size=1024):
     # Iterate through all .h5 files in the h5_directory
     for h5_file_name in os.listdir(h5_directory):
         if h5_file_name.endswith(".h5"):
@@ -93,4 +93,4 @@ output_base_directory = config.get('output_base_directory', '')
 
 if not h5_directory or not svs_directory or not output_base_directory:
     raise ValueError("h5_directory, svs_directory, and output_base_directory must be specified in the configuration file.")
-process_directories(h5_directory, svs_directory, output_base_directory)
+process_directories(h5_directory, svs_directory, output_base_directory, patch_size=1024)

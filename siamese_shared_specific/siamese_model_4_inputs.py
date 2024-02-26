@@ -40,7 +40,7 @@ class SiameseSharedAndSpecificLoss(nn.Module):
         super(SiameseSharedAndSpecificLoss, self).__init__()
         self.margin = margin
 
-    # 对比损失
+
     def contrastive_loss(self, output1, output2, label):
         euclidean_distance = F.pairwise_distance(output1, output2)
         loss_contrastive = torch.mean((1 - label) * torch.pow(euclidean_distance, 2) +
@@ -86,7 +86,7 @@ class SharedAndSpecificLoss(nn.Module):
         cost = F.relu(cost)
         return cost
 
-    # 对比损失GBMValidation
+
     def contrastive_loss(self, output1, output2, label):
         euclidean_distance = F.pairwise_distance(output1, output2)
         loss_contrastive = torch.mean((1 - label) * torch.pow(euclidean_distance, 2) +
@@ -184,7 +184,7 @@ class SiameseSharedAndSpecificClassifier(nn.Module):
         init.kaiming_uniform_(self.classification_l2.weight)
         init.kaiming_uniform_(self.classification_l3.weight)
 
-    def classify_code(self, code):  # code为拼接起来后的表示，进行分类
+    def classify_code(self, code):  
         classification_output = F.relu(self.classification_l1(F.dropout(code)))
         classification_output = F.relu(self.classification_l2(F.dropout(classification_output)))
         classification_output = self.classification_l3(classification_output)

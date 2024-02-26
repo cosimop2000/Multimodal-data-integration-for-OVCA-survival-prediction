@@ -47,7 +47,7 @@ def patching(WSI_object, **kwargs):
 
 
 def seg_and_patch(source, save_dir, patch_save_dir, mask_save_dir, stitch_save_dir,
-                  patch_size=256, step_size=256,
+                  patch_size=1024, step_size=1024,
                   seg_params={'seg_level': -1, 'sthresh': 8, 'mthresh': 7, 'close': 4, 'use_otsu': False,
                               'keep_ids': 'none', 'exclude_ids': 'none'},
                   filter_params={'a_t': 100, 'a_h': 16, 'max_n_holes': 8},
@@ -227,9 +227,9 @@ def seg_and_patch(source, save_dir, patch_save_dir, mask_save_dir, stitch_save_d
 parser = argparse.ArgumentParser(description='seg and patch')
 parser.add_argument('--source', type=str,
                     help='path to folder containing raw wsi image files')
-parser.add_argument('--step_size', type=int, default=256,
+parser.add_argument('--step_size', type=int, default=1024,
                     help='step_size')
-parser.add_argument('--patch_size', type=int, default=256,
+parser.add_argument('--patch_size', type=int, default=1024,
                     help='patch_size')
 parser.add_argument('--patch', default=False, action='store_true')
 parser.add_argument('--seg', default=False, action='store_true')

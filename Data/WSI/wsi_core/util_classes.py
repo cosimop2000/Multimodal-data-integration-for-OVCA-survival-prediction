@@ -6,7 +6,7 @@ import cv2
 
 
 class Mosaic_Canvas(object):
-    def __init__(self, patch_size=256, n=100, downscale=4, n_per_row=10, bg_color=(0, 0, 0), alpha=-1):
+    def __init__(self, patch_size=1024, n=100, downscale=4, n_per_row=10, bg_color=(0, 0, 0), alpha=-1):
         self.patch_size = patch_size
         self.downscaled_patch_size = int(np.ceil(patch_size / downscale))
         self.n_rows = int(np.ceil(n / n_per_row))
