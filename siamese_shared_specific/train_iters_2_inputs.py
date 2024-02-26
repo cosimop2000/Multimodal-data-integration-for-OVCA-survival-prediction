@@ -10,7 +10,7 @@ import copy
 from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
 import json
-from siamese_model import *
+from siamese_shared_specific.siamese_model_2_inputs import *
 
 
 

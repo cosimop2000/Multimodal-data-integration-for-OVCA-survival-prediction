@@ -79,7 +79,9 @@ if __name__ == "__main__":
             
         with open(parser['embeddings']['zero_shot_classifier_probs'], 'w') as fs:
             json.dump(prob_dict, fs)
-    else:
+    
+    
+    else: #declare SINGLE with the path of a single images FOR TESTING!
         from PIL import Image
         image = Image.open(SINGLE)
         image_embeddings = zsc.get_image_embeddings(image).detach().squeeze(1)
