@@ -33,5 +33,5 @@ In particular, each `/siamese_shared_specific/train_iters_<n>_inputs.py` execute
 
 ## Acknowledgment 
 
-Part of the code present in this work was taken from [Customics](https://github.com/HakimBenkirane/CustOmics/tree/main) and [ComprehensiveSurvival](https://github.com/githyr/ComprehensiveSurvival).
+Part of the code present in this work was taken from [Customics](https://github.com/HakimBenkirane/CustOmics/tree/main) and [ComprehensiveSurvival](https://github.com/githyr/ComprehensiveSurvival) as well as [CLAM](https://github.com/mahmoodlab/CLAM).
 
